@@ -99,36 +99,41 @@ int main()
     glDeleteShader(fragmentShader);
 
     float verticies[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-        -0.0f,  0.5f, 0.0f
+//         X     Y     Z
+        -0.5f, -0.5f, 0.0f, // 0
+         0.5f, -0.5f, 0.0f, // 1
+        -0.5f,  0.5f, 0.0f, // 2
+         0.5f,  0.5f, 0.0f, // 3
+    };
+    unsigned int indices[] = {  // Define triangles using indices
+        0, 1, 2,  // First triangle
+        1, 3, 2   // Second triangle
     };
 
-    // A VBO is basically a chunk of memory on the GPU where we store vertex data (positions, colors, texture coordinates, etc.)
-    // Instead of sending vertex data to the GPU every frame, we load it once into a VBO and let the GPU handle it efficiently.
-    unsigned int VBO; // Vertex Array Object
-    glGenBuffers(1, &VBO); // Generate a buffer ID
-    glBindBuffer(GL_ARRAY_BUFFER, VBO); // Bind the buffer as the active one
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW); // Copy vertex data into the buffer
+    unsigned int VAO, VBO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
 
-    unsigned int VAO; //Vertex Array Object
-    glGenVertexArrays(1, &VAO); // Generate a VAO
-    glBindVertexArray(VAO); // Bind the VAO, seletc it as active one
+    glBindVertexArray(VAO);
 
-    //glVertexAttribPointer (Attribute Setup)
-    // This part tells OpenGL how to read the vertex data from the VBO.
+    // Bind VBO
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
+
+    // Bind EBO
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // Tell OpenGL how to read the vertex data
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    /* Unbining, not always necessary */
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    // can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+    // Unbind VAO (optional)
     glBindVertexArray(0);
 
     // uncomment this call to draw in wireframe polygons.
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     // render loop
     while (!glfwWindowShouldClose(window))
@@ -142,8 +147,8 @@ int main()
 
         // draw triangle
         glUseProgram(shaderProgram);
-        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
